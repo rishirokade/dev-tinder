@@ -1,0 +1,20 @@
+{
+    "name": "dev-tinder",
+    "version": "1.0.0",
+    "description": "tinder for dev",
+    "main": "app.js",
+    "scripts": {
+        "start": "nodemon src/app.js",
+        "dev": "nodemon src/app.js"
+    },
+    "keywords": [
+        "nodejs",
+        "express",
+        "mongodb"
+    ],
+    "author": "rishikesh rokade",
+    "license": "ISC",
+    "dependencies": {
+        "express": "^5.1.0"
+    }
+}
