@@ -3,20 +3,20 @@ const express = require("express");
 const app = express();
 
 // order of route matter
+
+// handle all requests
 app.use("/test", (req, resp) => {
     resp.send("Hello from test");
 });
 
-app.use("/hello/2", (req, resp) => {
-    resp.send("Hello hello/2");
+// handle post and  requests
+app.post("/user", (req, resp) => {
+    resp.send("Hello from user POST");
 });
 
-app.use("/hello", (req, resp) => {
-    resp.send("Hello hello");
-});
-
-app.use("/", (req, resp) => {
-    resp.send("Hello from /");
+// handle only GET requests
+app.get("/user", (req, resp) => {
+    resp.send("Hello from user get");
 });
 
 app.listen(3000, () => {
