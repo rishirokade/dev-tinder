@@ -1,29 +1,16 @@
 const express = require("express");
-
+const authMiddleware = require("./middleware/authMiddleware");
 const app = express();
 
-app.use(
-    "/user",
-    (req, resp, next) => {
-        console.log("Middleware 1 for /user");
-        next();
-    },
-    (req, resp, next) => {
-        console.log("Middleware 2 for /user");
-        next();
-    },
-    (req, resp, next) => {
-        console.log("Middleware 3 for /user");
-        next();
-    },
-    (req, resp, next) => {
-        console.log("Middleware 4 for /user");
-        next();
-    },
-    (req, resp, next) => {
-        resp.send("Hello from middleware 5 /user");
-    }
-);
+// Required to parse JSON request body
+app.use(express.json());
+
+// Apply middleware only to /user routes
+app.use("/user", authMiddleware);
+
+app.post("/user", (req, res) => {
+    res.send("✅ User is logged in");
+});
 
 app.listen(3000, () => {
     console.log("✅ Server is running on port 3000");
