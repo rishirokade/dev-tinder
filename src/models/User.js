@@ -1,4 +1,12 @@
 const mongoose = require("mongoose");
+const validator = require("validator");
+//  validator run on save or create time mongo does not validate
+//  for other update need to explicitly mention during action to validate action
+// or we can call On validate() or validateSync() manually on model
+
+// Always runs: save(), create(), validate()
+// Optional (need runValidators: true): updateOne(), findOneAndUpdate(), etc.
+// Does NOT run: deleteOne(), remove(), find() (no data changes, so no validation needed)
 
 const userSchema = new mongoose.Schema(
     {
@@ -8,10 +16,12 @@ const userSchema = new mongoose.Schema(
             trim: true,
             minlength: [3, "Username must be at least 3 characters"],
             maxlength: [30, "Username cannot exceed 30 characters"],
-            match: [
-                /^[a-zA-Z0-9_]+$/,
-                "Username can only contain letters, numbers, and underscores",
-            ],
+            validate: {
+                validator: (v) =>
+                    validator.isAlphanumeric(v, "en-US", { ignore: "_" }),
+                message:
+                    "Username can only contain letters, numbers, and underscores",
+            },
             unique: true,
         },
         fullName: {
@@ -27,7 +37,10 @@ const userSchema = new mongoose.Schema(
             unique: true,
             lowercase: true,
             trim: true,
-            match: [/\S+@\S+\.\S+/, "Please use a valid email address"],
+            validate: {
+                validator: (v) => validator.isEmail(v),
+                message: "Please use a valid email address",
+            },
             index: true,
         },
         password: {
@@ -35,10 +48,18 @@ const userSchema = new mongoose.Schema(
             required: [true, "Password is required"],
             minlength: [8, "Password must be at least 8 characters"],
             maxlength: [128, "Password cannot exceed 128 characters"],
-            match: [
-                /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-                "Password must contain uppercase, lowercase, number and special character",
-            ],
+            validate: {
+                validator: (v) =>
+                    validator.isStrongPassword(v, {
+                        minLength: 8,
+                        minLowercase: 1,
+                        minUppercase: 1,
+                        minNumbers: 1,
+                        minSymbols: 1,
+                    }),
+                message:
+                    "Password must contain uppercase, lowercase, number and special character",
+            },
             select: false, // Don't return password by default
         },
         age: {
@@ -53,12 +74,14 @@ const userSchema = new mongoose.Schema(
         },
         phoneNumber: {
             type: String,
-            match: [
-                /^\+?[1-9]\d{1,14}$/,
-                "Invalid phone number format (E.164 standard)",
-            ],
             unique: true,
             sparse: true, // Allows null + unique
+            validate: {
+                validator: (v) =>
+                    !v ||
+                    validator.isMobilePhone(v, "any", { strictMode: false }),
+                message: "Invalid phone number format",
+            },
         },
         address: {
             street: { type: String, trim: true },
@@ -67,7 +90,10 @@ const userSchema = new mongoose.Schema(
             country: { type: String, trim: true },
             postalCode: {
                 type: String,
-                match: [/^\d{4,10}$/, "Postal code must be 4–10 digits"],
+                validate: {
+                    validator: (v) => !v || validator.isPostalCode(v, "any"),
+                    message: "Postal code is invalid",
+                },
             },
         },
         role: {
@@ -83,11 +109,12 @@ const userSchema = new mongoose.Schema(
             type: Date,
         },
         profilePicture: {
-            type: String, // store URL or file path
-            match: [
-                /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/,
-                "Must be a valid image URL",
-            ],
+            type: String,
+            validate: {
+                validator: (v) =>
+                    !v || validator.isURL(v, { protocols: ["http", "https"] }),
+                message: "Must be a valid image URL",
+            },
         },
         bio: {
             type: String,
@@ -97,30 +124,48 @@ const userSchema = new mongoose.Schema(
         socialLinks: {
             github: {
                 type: String,
-                match: [
-                    /^https?:\/\/(www\.)?github\.com\/.+$/,
-                    "Invalid GitHub URL",
-                ],
+                validate: {
+                    validator: (v) =>
+                        !v ||
+                        validator.isURL(v, {
+                            require_protocol: true,
+                            host_whitelist: ["github.com", "www.github.com"],
+                        }),
+                    message: "Invalid GitHub URL",
+                },
             },
             linkedin: {
                 type: String,
-                match: [
-                    /^https?:\/\/(www\.)?linkedin\.com\/.+$/,
-                    "Invalid LinkedIn URL",
-                ],
+                validate: {
+                    validator: (v) =>
+                        !v ||
+                        validator.isURL(v, {
+                            require_protocol: true,
+                            host_whitelist: [
+                                "linkedin.com",
+                                "www.linkedin.com",
+                            ],
+                        }),
+                    message: "Invalid LinkedIn URL",
+                },
             },
             twitter: {
                 type: String,
-                match: [
-                    /^https?:\/\/(www\.)?twitter\.com\/.+$/,
-                    "Invalid Twitter URL",
-                ],
+                validate: {
+                    validator: (v) =>
+                        !v ||
+                        validator.isURL(v, {
+                            require_protocol: true,
+                            host_whitelist: ["twitter.com", "www.twitter.com"],
+                        }),
+                    message: "Invalid Twitter URL",
+                },
             },
         },
         createdAt: {
             type: Date,
             default: Date.now,
-            immutable: true, // Can't be changed once created
+            immutable: true,
         },
         updatedAt: {
             type: Date,
@@ -130,6 +175,7 @@ const userSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+// Auto-update `updatedAt` before save
 userSchema.pre("save", function (next) {
     this.updatedAt = Date.now();
     next();
