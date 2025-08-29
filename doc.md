@@ -6,4 +6,7 @@
 
 <!--
 Schema → Model → Document → Collection
- -->
+-->
+
+VALIDATOR
+DYCRIPT

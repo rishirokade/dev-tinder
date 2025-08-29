@@ -1,5 +1,8 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+
 //  validator run on save or create time mongo does not validate
 //  for other update need to explicitly mention during action to validate action
 // or we can call On validate() or validateSync() manually on model
@@ -60,7 +63,6 @@ const userSchema = new mongoose.Schema(
                 message:
                     "Password must contain uppercase, lowercase, number and special character",
             },
-            select: false, // Don't return password by default
         },
         age: {
             type: Number,
@@ -180,5 +182,22 @@ userSchema.pre("save", function (next) {
     this.updatedAt = Date.now();
     next();
 });
+
+userSchema.methods.getJWTToken = async function () {
+    const user = this;
+    const token = await jwt.sign({ id: user._id }, "jwtSecretKey", {
+        expiresIn: "7d",
+    });
+    return token;
+};
+
+userSchema.methods.validPassword = async function (userInputPassword) {
+    const user = this;
+    const isValidPassword = await bcrypt.compare(
+        userInputPassword,
+        user.password
+    );
+    return isValidPassword;
+};
 
 module.exports = mongoose.model("User", userSchema);

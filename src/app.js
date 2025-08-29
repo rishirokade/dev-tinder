@@ -1,14 +1,56 @@
 const express = require("express");
 const mongoDbConnection = require("./config/database");
+const authMiddleware = require("./middleware/authMiddleware");
 const UserModel = require("./models/User");
+const validator = require("validator");
+const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 
 app.use(express.json());
-app.post("/user", async (req, res) => {
+app.use(cookieParser());
+
+app.post("/signin", async (req, res) => {
+    const { userName, password } = req.body;
+    try {
+        if (
+            !validator.isEmail(userName) ||
+            !validator.isStrongPassword(password)
+        )
+            throw Error("Invalid Credentials");
+
+        const user = await UserModel.findOne({ emailId: userName });
+        if (!user) throw Error("User not found");
+
+        const isValidPassword = user.validPassword(password);
+        if (!isValidPassword) throw Error("Invalid Credentials");
+
+        const jwtCookies = user.getJWTToken();
+        res.cookie("token", jwtCookies);
+        res.status(200).json({ message: "Login successful", data: user });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+});
+
+app.get("/profile", authMiddleware, async (req, res) => {
+    try {
+        res.status(200).json({ message: "User profile", data: req.user });
+    } catch (error) {
+        res.status(400).send("something went wrong");
+    }
+});
+
+app.post("/signup", async (req, res) => {
     const body = req.body;
     try {
-        const user = new UserModel(body);
+        if (!body.emailId) throw Error("emailId is required");
+        if (!body.password) throw Error("password is required");
+
+        const bcryptPassword = await bcrypt.hash(body.password, 10);
+
+        const user = new UserModel({ ...body, password: bcryptPassword });
         await user.save();
         res.status(201).json(user);
     } catch (error) {
