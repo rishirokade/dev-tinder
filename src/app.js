@@ -22,6 +22,27 @@ app.patch("/user", async (req, res) => {
     const updateData = req.body;
 
     try {
+        const ALLOW_UPDATES_FIELDS = [
+            "fullName",
+            "emailId",
+            "password",
+            "age",
+            "gender",
+            "phoneNumber",
+            "address",
+            "role",
+            "isActive",
+            "lastLogin",
+            "profilePicture",
+        ];
+        const requestedUpdateFields = Object.keys(updateData).every((field) =>
+            ALLOW_UPDATES_FIELDS.includes(field)
+        );
+
+        if (requestedUpdateFields) {
+            throw Error("Not allowed to update these fields");
+        }
+
         if (!emailId) {
             return res.status(400).json({ message: "emailId is required" });
         }
