@@ -3,3 +3,7 @@
 3. npm i express
 4. install nodemon
 5. update package.json
+
+<!--
+Schema → Model → Document → Collection
+ -->
