@@ -5,6 +5,7 @@ const authRouter = require("./router/authRouter");
 const profileRouter = require("./router/profileRouter");
 const connectionRouter = require("./router/connectionRouter");
 const authMiddleware = require("./middleware/authMiddleware");
+const userRouter = require("./router/userRouter");
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.use(cookieParser());
 app.use("/auth", authRouter);
 app.use("/profile", profileRouter);
 app.use("/connection", authMiddleware, connectionRouter);
+app.use("/user", authMiddleware, userRouter);
 
 mongoDbConnection()
     .then(() => {

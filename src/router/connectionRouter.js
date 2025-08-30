@@ -19,13 +19,13 @@ connectionRouter.post("/send/:status/:targetedUserId", async (req, res) => {
         const targetedUser = await User.findById(targetedUserId);
         if (!targetedUser) throw Error("Targeted user not found");
 
-        if (targetedUserId === user.id)
+        if (targetedUserId === user._id)
             throw Error("You cannot connect with yourself");
 
         const existingConnection = await connection.findOne({
             $or: [
-                { requester: user.id, targeted: targetedUserId },
-                { requester: targetedUserId, targeted: user.id },
+                { requester: user._id, targeted: targetedUserId },
+                { requester: targetedUserId, targeted: user._id },
             ],
         });
 
@@ -35,13 +35,13 @@ connectionRouter.post("/send/:status/:targetedUserId", async (req, res) => {
             );
 
         await connection.create({
-            requester: user.id,
+            requester: user._id,
             targeted: targetedUserId,
             status,
         });
         res.status(200).send({
             message: `Connection ${status} successfully`,
-            data: { requester: user.id, targeted: targetedUserId, status },
+            data: { requester: user._id, targeted: targetedUserId, status },
         });
     } catch (error) {
         res.status(400).send(error.message);
@@ -63,12 +63,12 @@ connectionRouter.post("/review/:status/:targetedUserId", async (req, res) => {
         const targetedUser = await User.findById(targetedUserId);
         if (!targetedUser) throw Error("Targeted user not found");
 
-        if (targetedUserId === loggedInUser.id)
+        if (targetedUserId === loggedInUser._id)
             throw Error("You cannot connect with yourself");
 
         const existingConnection = await connection.findOne({
             requester: targetedUserId,
-            targeted: loggedInUser.id,
+            targeted: loggedInUser._id,
             status: "interested",
         });
 
